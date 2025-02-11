@@ -1,6 +1,9 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
+
+import jwt from "jsonwebtoken";
+import { JWT_SECRET, JWT_EXPIRES_IN } from "../config/env.js";
+import User from "../models/user.model.js";
 export const signUp = async (req, res, next) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -9,7 +12,7 @@ export const signUp = async (req, res, next) => {
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      const error = new Error('User already exists');
+      const error = new Error("User already exists");
       error.statusCode = 409;
       throw error;
     }
@@ -17,7 +20,7 @@ export const signUp = async (req, res, next) => {
     //Hash password
     const salt = await bcrypt.getSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    const newUsers = await user.create(
+    const newUsers = await User.create(
       [{ name, email, password: hashedPassword }],
       {
         session,
@@ -31,7 +34,7 @@ export const signUp = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: 'User created Successfully',
+      message: "User created Successfully",
       data: { token, user: newUsers[0] },
     });
   } catch (error) {
@@ -45,7 +48,7 @@ export const signIn = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) {
-      return next(new Error('Please provide an email and password'));
+      return next(new Error("Please provide an email and password"));
     }
   } catch (error) {
     next(error);
@@ -54,7 +57,7 @@ export const signIn = async (req, res, next) => {
 
 export const signOut = async (req, res, next) => {
   try {
-    res.cookie('token', 'none', {
+    res.cookie("token", "none", {
       expires: new Date(Date.now() + 10 * 1000),
       httpOnly: true,
     });
